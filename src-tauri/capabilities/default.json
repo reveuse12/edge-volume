@@ -1,0 +1,10 @@
+{
+  "identifier": "default",
+  "windows": [
+    "main",
+    "overlay"
+  ],
+  "permissions": [
+    "core:default"
+  ]
+}

@@ -1,0 +1,158 @@
+# EdgeVolume
+
+Control your Mac's system volume by sliding one finger along the **physical edge of its trackpad**, wherever the cursor is on screen.
+
+EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React, and TypeScript**. A small floating indicator shows the current volume and whether it is increasing or decreasing.
+
+> **Platform status:** The macOS prototype is implemented and has been tested on an Apple Silicon Mac. Windows Precision Touchpad support is planned; this version does not control volume on Windows.
+
+## Features
+
+- Choose the left edge, right edge, or both edges.
+- Adjust the active strip width from 3% to 20% of the trackpad surface.
+- Set gesture sensitivity and reverse the volume direction.
+- See the actual output volume percentage in a floating, click-through indicator.
+- Get Increasing, Decreasing, Maximum volume, Muted, or Volume unchanged feedback.
+- Preview the indicator without changing volume.
+- View live trackpad contact positions and input frame counts in preferences.
+- Save edge and sensitivity settings between launches.
+- Open preferences, pause gestures, or quit from the menu bar.
+
+## Quick start on macOS
+
+### Requirements
+
+- Node.js 20 or newer and npm.
+- A stable Rust toolchain installed with [rustup](https://rustup.rs/).
+- Xcode Command Line Tools. Install them with `xcode-select --install` if needed.
+- A supported Apple multitouch trackpad and an output device with adjustable system volume.
+
+The current build was validated on **Apple Silicon, macOS 27.0.1**. The original PRD's macOS 12+ and Intel targets have not yet been validated.
+
+### Install and run
+
+```sh
+git clone https://github.com/reveuse12/edge-volume.git
+cd edge-volume
+npm ci
+npm run tauri dev
+```
+
+This launches the native desktop app and its development frontend. Running `npm run dev` alone opens the preferences frontend without access to native trackpad input or system volume.
+
+### Use the gesture
+
+1. Open preferences and choose an active edge. The default is the rightmost 8% of the trackpad.
+2. Click **Enable gestures**. Gestures start paused on each launch while the input adapter is experimental.
+3. Place one finger inside the highlighted strip and slide vertically. Up increases volume; down decreases it, unless direction is reversed.
+4. Lift your finger to finish. The volume indicator disappears 1.4 seconds after the last adjustment.
+
+A small activation deadzone filters tiny movements. Starting outside the strip, adding another finger, leaving the strip, or a large coordinate jump cancels the gesture until all fingers lift.
+
+**Closing preferences keeps EdgeVolume running in the menu bar.** Choose **Quit EdgeVolume** from its menu to exit.
+
+## Volume indicator
+
+The indicator appears near the lower-right corner of the display associated with its window. It stays above ordinary windows, does not take keyboard focus, and ignores clicks. It reads volume back from the audio device after adjustments, so the percentage reflects the reported output level.
+
+Click **Preview volume indicator** in preferences to show your current volume for five seconds without changing it.
+
+## Build and check
+
+```sh
+# TypeScript check and production frontend build
+npm run build
+
+# Gesture engine tests
+cargo test --locked --manifest-path src-tauri/Cargo.toml
+
+# Package the desktop application
+npm run tauri build
+```
+
+The macOS app is generated at:
+
+```text
+src-tauri/target/release/bundle/macos/EdgeVolume.app
+```
+
+For a development bundle, run `npm run tauri build -- --debug`. Its app is under `src-tauri/target/debug/bundle/macos/`. Local builds are not signed or notarized for distribution.
+
+### Read-only hardware probe
+
+To check native trackpad input and audio access independently of the UI:
+
+```sh
+clang tools/mac-probe.c src-tauri/native/mac.c \
+  -framework CoreFoundation -framework CoreAudio \
+  -o /tmp/edgevolume-probe
+/tmp/edgevolume-probe
+```
+
+Touch the trackpad during the five-second probe. It reports adapter startup, the audio read status, and aggregate frame counts. It does not change volume.
+
+## How it works
+
+```text
+Physical trackpad contacts
+    → macOS native input adapter
+    → Rust edge gesture state machine
+    → CoreAudio default output volume
+    → React preferences and floating indicator
+```
+
+The macOS adapter dynamically loads Apple's private `MultitouchSupport` framework to receive normalized finger coordinates. Ordinary cursor or scroll events cannot identify the physical trackpad edge.
+
+The Rust engine requires a single contact that begins inside an active edge, applies an activation deadzone, rejects invalid gestures, and clamps volume to 0–100%. CoreAudio reads and writes the current default output device. Unsupported audio outputs pause gestures and report an error.
+
+Settings are stored in Tauri's application configuration directory as `settings.json`. Trackpad contact data is held in memory; the app does not send it over the network or write it to logs.
+
+## Project structure
+
+| Path | Purpose |
+| --- | --- |
+| `src/main.tsx` | Preferences and volume indicator UI |
+| `src/style.css` | UI styling |
+| `src-tauri/src/gesture.rs` | Gesture recognition and tests |
+| `src-tauri/src/main.rs` | Desktop lifecycle, settings, commands, tray, and indicator |
+| `src-tauri/native/mac.c` | macOS physical contact and CoreAudio adapters |
+| `tools/mac-probe.c` | Read-only hardware diagnostic |
+| `PRD_ Cross-Platform Trackpad Edge Volume Control.md` | Requirements and implementation clarifications |
+
+## Current limitations
+
+- **Private macOS API:** OS updates can break the undocumented input ABI. Mac App Store compatibility is not claimed.
+- **System gestures remain active:** The prototype observes touches; it does not suppress cursor motion or native trackpad gestures during volume adjustment.
+- **One trackpad per session:** The adapter selects a trackpad at startup. Restart after connecting or reconnecting devices.
+- **Windows is pending:** Precision Touchpad HID input and Windows audio endpoint adapters are not implemented.
+- **Release features are pending:** No launch at login, fullscreen/app exclusions, mute shortcut, or updater.
+- **Performance targets remain unverified:** Memory, latency, installer size, older macOS versions, and Intel compatibility still need measurement and hardware testing.
+- **Fullscreen behavior is unverified:** The floating indicator has been checked on the desktop; coverage of fullscreen apps and Spaces remains to be tested.
+
+The observation-only input adapter does not currently request Accessibility or Input Monitoring permission. A future input suppression adapter will need its own permission handling and validation.
+
+## Validation to date
+
+On 7 October 2026:
+
+- Production frontend build and TypeScript checks passed.
+- Five Rust gesture tests passed.
+- The debug macOS app bundled and opened successfully.
+- The hardware probe received real trackpad contacts and read system volume.
+- Desktop preferences displayed live input and output volume.
+- The floating indicator was visually verified using the read-only preview.
+
+These checks establish a working Mac prototype, not cross-platform release readiness.
+
+## Next milestones
+
+- Validate edge gestures, accidental activation, sleep/wake, reconnects, and audio device changes on more Macs.
+- Add permission-gated suppression of pointer and scroll events during active volume gestures.
+- Implement and validate Windows Precision Touchpad and audio adapters.
+- Add launch at login, exclusions, and optional mute controls.
+- Profile resource usage and prepare signed release packages.
+
+## Technical references
+
+- [macOSMiddleClick: private multitouch ABI reference](https://github.com/SomeGuyNamedDaveIsTaken/macOSMiddleClick)
+- [Microsoft: Windows Precision Touchpad collection](https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection)
