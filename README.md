@@ -6,6 +6,38 @@ EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React,
 
 > **Platform status:** The macOS prototype is implemented and has been tested on an Apple Silicon Mac. Windows Precision Touchpad support is planned; this version does not control volume on Windows.
 
+## For laptop users: the easiest way to use it
+
+### MacBook users
+
+**If you already have a built `EdgeVolume.app`:**
+
+1. Drag `EdgeVolume.app` into your **Applications** folder and double-click it.
+2. Click **Enable gestures**. Leave the default right edge selected to start.
+3. Put one finger on the far-right edge of your trackpad and slide **up to raise volume** or **down to lower it**.
+4. Watch the small popup for the current volume percentage.
+
+You can close the settings window and keep using the gesture. Click the EdgeVolume menu bar icon to open preferences, pause gestures, or quit. After reopening the app, enable gestures again.
+
+**Downloading from this repository:** There is currently no ready-to-download installer or app release. The repository contains source code. Until a packaged release is published, you need to build it once using the steps below. Downloading the repository ZIP alone does not give you an installable app.
+
+After installing the [requirements](#requirements), open **Terminal** and paste:
+
+```sh
+git clone https://github.com/reveuse12/edge-volume.git
+cd edge-volume
+npm ci
+npm run tauri dev
+```
+
+Keep Terminal open while using this development version. For an app you can launch later without Terminal, run `npm run tauri build` from the same folder, then find `EdgeVolume.app` in `src-tauri/target/release/bundle/macos/` and move it to Applications.
+
+### Windows laptop users
+
+**Windows support is not available in this version.** There is no Windows installer, and building the current code on Windows will not enable trackpad volume control.
+
+A future Windows version needs a supported **Precision Touchpad** and a completed Windows input/audio adapter. Once that version is released, this section will include its download and installation steps. For now, only the Mac prototype can be used.
+
 ## Features
 
 - Choose the left edge, right edge, or both edges.
