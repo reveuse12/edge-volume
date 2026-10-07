@@ -36,6 +36,18 @@ The green strip marks the active part of the **physical trackpad**. Choose **Lef
 
 This is an **early-access release**: the apps are ad-hoc signed, not Apple Developer ID signed or notarized. macOS may require your approval before the first launch. If you choose to run it, follow [Apple's instructions for an app from an unidentified developer](https://support.apple.com/en-us/102445). Do not disable your Mac's security protections.
 
+#### If macOS blocks the first launch
+
+Only approve the app if you downloaded it from this repository's release page and trust it.
+
+1. Open the **DMG** and drag **EdgeVolume** into **Applications**.
+2. Open EdgeVolume from Applications. If macOS blocks it, click **Done**.
+3. Open **System Settings → Privacy & Security**.
+4. Scroll down and click **Open Anyway** beside the EdgeVolume message.
+5. Confirm with your password or Touch ID if prompted, then click **Open**.
+
+This approves that app for future launches. The **Open Anyway** option appears after you have tried opening the blocked app. See [Apple's official instructions](https://support.apple.com/en-us/102445). If the warning says the app is damaged or will harm your computer, stop and check the download rather than treating it as a normal first-launch approval.
+
 You can close the settings window and keep using the gesture. Click the EdgeVolume menu bar icon to open preferences, pause gestures, or quit. After reopening the app, enable gestures again.
 
 Apple Silicon hardware input was tested on macOS 27.0.1. Intel builds are compiled in GitHub Actions; Intel trackpad behavior and other macOS versions still need hands-on validation.
@@ -204,3 +216,9 @@ These checks establish a working Mac prototype, not cross-platform release readi
 The `.github/workflows/release.yml` workflow builds and tests separate Apple Silicon and Intel apps when a version tag is pushed. It verifies each app's signature and architecture, packages a DMG and ZIP, creates SHA-256 checksums, and publishes a GitHub prerelease only after both builds succeed.
 
 To publish a new version, update the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json`, regenerate the lockfiles, update release notes and download links, then push the matching `vX.Y.Z` tag. No release signing secrets are required for the current ad-hoc builds. A smoother first-launch experience requires Apple Developer ID signing and notarization in a later release.
+
+## Duplicate app entries during local development
+
+macOS app search can show more than one EdgeVolume entry when it finds multiple `.app` bundles. Developers may have a debug app, a release app, and a packaging test copy in `src-tauri/target/`, alongside the installed copy in `/Applications`.
+
+These are separate files, not evidence that multiple app processes are running. For everyday use, open **Finder → Applications → EdgeVolume**. Build and test copies are not required by the installed app and can be moved to Trash when you no longer need them. Installing from the DMG alone does not create the debug or packaging test copies.
