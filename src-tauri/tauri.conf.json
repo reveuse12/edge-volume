@@ -42,6 +42,10 @@
     "active": true,
     "targets": [
       "app"
-    ]
+    ],
+    "macOS": {
+      "minimumSystemVersion": "15.0",
+      "signingIdentity": "-"
+    }
   }
 }

@@ -8,29 +8,23 @@ EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React,
 
 ## For laptop users: the easiest way to use it
 
-### MacBook users
+### MacBook users — no developer tools needed
 
-**If you already have a built `EdgeVolume.app`:**
+1. Open [the Mac downloads](https://github.com/reveuse12/edge-volume/releases/tag/v0.1.0).
+2. Check **Apple menu → About This Mac**. For an M-series chip, download `EdgeVolume-v0.1.0-apple-silicon.dmg`. For an Intel processor, download `EdgeVolume-v0.1.0-intel.dmg`.
+3. Open the downloaded disk image and drag **EdgeVolume** onto **Applications**.
+4. Open EdgeVolume from Applications and click **Enable gestures**.
+5. Slide one finger **up or down along the far-right edge of the trackpad**. The floating popup shows your volume percentage.
 
-1. Drag `EdgeVolume.app` into your **Applications** folder and double-click it.
-2. Click **Enable gestures**. Leave the default right edge selected to start.
-3. Put one finger on the far-right edge of your trackpad and slide **up to raise volume** or **down to lower it**.
-4. Watch the small popup for the current volume percentage.
+**Rust, Node.js, npm, Xcode, and Terminal are not needed to use the downloaded app.** Requires macOS 15 or newer. ZIP downloads containing the same app are also available.
+
+This is an **early-access release**: the apps are ad-hoc signed, not Apple Developer ID signed or notarized. macOS may require your approval before the first launch. If you choose to run it, follow [Apple's instructions for an app from an unidentified developer](https://support.apple.com/en-us/102445). Do not disable your Mac's security protections.
 
 You can close the settings window and keep using the gesture. Click the EdgeVolume menu bar icon to open preferences, pause gestures, or quit. After reopening the app, enable gestures again.
 
-**Downloading from this repository:** There is currently no ready-to-download installer or app release. The repository contains source code. Until a packaged release is published, you need to build it once using the steps below. Downloading the repository ZIP alone does not give you an installable app.
+Apple Silicon hardware input was tested on macOS 27.0.1. Intel builds are compiled in GitHub Actions; Intel trackpad behavior and other macOS versions still need hands-on validation.
 
-After installing the [requirements](#requirements), open **Terminal** and paste:
-
-```sh
-git clone https://github.com/reveuse12/edge-volume.git
-cd edge-volume
-npm ci
-npm run tauri dev
-```
-
-Keep Terminal open while using this development version. For an app you can launch later without Terminal, run `npm run tauri build` from the same folder, then find `EdgeVolume.app` in `src-tauri/target/release/bundle/macos/` and move it to Applications.
+Want to change the code? The developer setup below is separate from installing the downloaded app.
 
 ### Windows laptop users
 
@@ -50,7 +44,7 @@ A future Windows version needs a supported **Precision Touchpad** and a complete
 - Save edge and sensitivity settings between launches.
 - Open preferences, pause gestures, or quit from the menu bar.
 
-## Quick start on macOS
+## Developer setup on macOS
 
 ### Requirements
 
@@ -59,7 +53,7 @@ A future Windows version needs a supported **Precision Touchpad** and a complete
 - Xcode Command Line Tools. Install them with `xcode-select --install` if needed.
 - A supported Apple multitouch trackpad and an output device with adjustable system volume.
 
-The current build was validated on **Apple Silicon, macOS 27.0.1**. The original PRD's macOS 12+ and Intel targets have not yet been validated.
+Release builds target macOS 15 or newer. Hardware input was validated on **Apple Silicon, macOS 27.0.1**; other hardware and OS versions still need validation. The original PRD's macOS 12+ target is deferred.
 
 ### Install and run
 
@@ -108,7 +102,7 @@ The macOS app is generated at:
 src-tauri/target/release/bundle/macos/EdgeVolume.app
 ```
 
-For a development bundle, run `npm run tauri build -- --debug`. Its app is under `src-tauri/target/debug/bundle/macos/`. Local builds are not signed or notarized for distribution.
+For a development bundle, run `npm run tauri build -- --debug`. Its app is under `src-tauri/target/debug/bundle/macos/`. Builds use an ad-hoc signature. Developer ID signing and Apple notarization are not configured.
 
 ### Read-only hardware probe
 
@@ -188,3 +182,9 @@ These checks establish a working Mac prototype, not cross-platform release readi
 
 - [macOSMiddleClick: private multitouch ABI reference](https://github.com/SomeGuyNamedDaveIsTaken/macOSMiddleClick)
 - [Microsoft: Windows Precision Touchpad collection](https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection)
+
+## Publishing Mac downloads
+
+The `.github/workflows/release.yml` workflow builds and tests separate Apple Silicon and Intel apps when a version tag is pushed. It verifies each app's signature and architecture, packages a DMG and ZIP, creates SHA-256 checksums, and publishes a GitHub prerelease only after both builds succeed.
+
+To publish a new version, update the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json`, regenerate the lockfiles, update release notes and download links, then push the matching `vX.Y.Z` tag. No release signing secrets are required for the current ad-hoc builds. A smoother first-launch experience requires Apple Developer ID signing and notarization in a later release.

@@ -1,0 +1,79 @@
+name: Mac early-access release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            name: apple-silicon
+            arch: arm64
+          - runner: macos-15-intel
+            name: intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Check gesture engine
+        run: cargo +stable test --locked --manifest-path src-tauri/Cargo.toml
+      - name: Build app
+        run: npm run tauri build -- --bundles app
+      - name: Verify and package
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          BUILD_NAME: ${{ matrix.name }}
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          app='src-tauri/target/release/bundle/macos/EdgeVolume.app'
+          codesign --verify --deep --strict --verbose=2 "$app"
+          lipo -verify_arch "$EXPECTED_ARCH" "$app/Contents/MacOS/edgevolume"
+          mkdir -p package assets
+          ditto "$app" package/EdgeVolume.app
+          ln -s /Applications package/Applications
+          hdiutil create -volname EdgeVolume -srcfolder package -ov -format UDZO "assets/EdgeVolume-${RELEASE_TAG}-${BUILD_NAME}.dmg"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "assets/EdgeVolume-${RELEASE_TAG}-${BUILD_NAME}.zip"
+          cd assets
+          shasum -a 256 *.dmg *.zip > "SHA256SUMS-${BUILD_NAME}.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.name }}
+          path: assets/*
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Publish early-access download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" assets/* \
+            --title "EdgeVolume $RELEASE_TAG — Mac early access" \
+            --notes-file .github/RELEASE_NOTES.md \
+            --prerelease --verify-tag
