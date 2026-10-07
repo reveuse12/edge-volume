@@ -6,3 +6,6 @@ src-tauri/gen/
 .env
 .env.*
 !.env.example
+
+landing/.vercel/
+.vercel/

@@ -1,5 +1,7 @@
 # EdgeVolume
 
+[Visit the website](https://edgevolume.vercel.app/) · [Download for Mac](https://edgevolume.vercel.app/#download)
+
 Control your Mac's system volume by sliding one finger along the **physical edge of its trackpad**, wherever the cursor is on screen.
 
 EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React, and TypeScript**. A small floating indicator shows the current volume and whether it is increasing or decreasing.
@@ -255,3 +257,9 @@ These changes are in the development source; the original v0.1.0 macOS release D
 - The indicator distinguishes actual mute from minimum volume. Unsupported audio outputs pause adjustment and recover when an adjustable output is available.
 
 The app still observes input without suppressing pointer movement or macOS gestures. Avoid the feature in apps where those movements would be disruptive, or exclude them. The private macOS touch API and Windows contact decoding remain limitations.
+
+## Landing page
+
+The website lives in `landing/` and is hosted at [edgevolume.vercel.app](https://edgevolume.vercel.app/). Vercel uses `landing` as the project root and serves the static files without a build step. GitHub pushes to the production branch deploy the website.
+
+To preview locally: `python3 -m http.server 4173 --directory landing`. The volume slider is an illustration and does not change system volume. Download links point to the existing early-access release; update them when a new release is published.
