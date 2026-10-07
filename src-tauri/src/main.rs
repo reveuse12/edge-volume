@@ -16,7 +16,7 @@ use tauri::{
 extern "C" {
     fn edge_start(callback: extern "C" fn(i32, i32, f32, f32)) -> i32;
     fn edge_volume(value: *mut f32, write: i32) -> i32;
-    fn edge_configure_overlay(window: *mut std::ffi::c_void, show: i32);
+    fn edge_show_overlay(volume: f32, label: *const std::ffi::c_char, visible: i32);
 }
 #[cfg(target_os = "windows")]
 extern "C" {
@@ -333,26 +333,53 @@ fn main() {
                 .get_webview_window("overlay")
                 .ok_or("Overlay window missing")?;
             overlay.set_ignore_cursor_events(true)?;
-            #[cfg(target_os = "macos")]
-            unsafe {
-                edge_configure_overlay(overlay.ns_window()?, 0);
-            }
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 let mut shown = false;
                 loop {
                     std::thread::sleep(Duration::from_millis(50));
-                    let visible = ENGINE
+                    let (visible, feedback) = ENGINE
                         .get()
                         .and_then(|e| e.lock().ok())
-                        .and_then(|e| e.feedback_until)
-                        .is_some_and(|t| Instant::now() < t);
+                        .map(|e| {
+                            (
+                                e.feedback_until.is_some_and(|t| Instant::now() < t),
+                                e.status.feedback.clone(),
+                            )
+                        })
+                        .unwrap_or((false, None));
+                    // Native macOS HUD also refreshes its value during a gesture;
+                    // it never relies on a hidden/background WebView rendering.
+                    if !visible && !shown {
+                        continue;
+                    }
+                    #[cfg(not(target_os = "macos"))]
                     if visible == shown {
                         continue;
                     }
                     shown = visible;
                     let app = handle.clone();
                     let _ = handle.run_on_main_thread(move || {
+                        #[cfg(target_os = "macos")]
+                        {
+                            let _ = app;
+                            if let Some(feedback) = feedback {
+                                if let Ok(label) = std::ffi::CString::new(feedback.label) {
+                                    unsafe {
+                                        edge_show_overlay(
+                                            feedback.volume,
+                                            label.as_ptr(),
+                                            i32::from(visible),
+                                        );
+                                    }
+                                }
+                            } else {
+                                unsafe {
+                                    edge_show_overlay(0.0, c"Current volume".as_ptr(), 0);
+                                }
+                            }
+                        }
+                        #[cfg(not(target_os = "macos"))]
                         if let Some(w) = app.get_webview_window("overlay") {
                             if visible {
                                 if let Ok(Some(m)) = w.current_monitor() {
@@ -366,12 +393,6 @@ fn main() {
                                     let _ = w.set_position(tauri::LogicalPosition::new(x, y));
                                 }
                                 let _ = w.show();
-                                #[cfg(target_os = "macos")]
-                                if let Ok(window) = w.ns_window() {
-                                    unsafe {
-                                        edge_configure_overlay(window, 1);
-                                    }
-                                }
                             } else {
                                 let _ = w.hide();
                             }

@@ -54,11 +54,25 @@ Apple Silicon hardware input was tested on macOS 27.0.1. Intel builds are compil
 
 Want to change the code? The developer setup below is separate from installing the downloaded app.
 
-### Windows laptop users
+### Windows laptop users — development download
 
-**Windows physical edge gestures are not available yet.** The new development build adds system volume read/write, an indicator preview, explicit ±5 percentage point audio test buttons, and background touchpad HID diagnostics. It does not decode finger coordinates or enable gestures.
+[**Download the Windows development ZIP**](https://github.com/reveuse12/edge-volume/actions/runs/37604624677/artifacts/11474931281) · [Verified build and artifacts](https://github.com/reveuse12/edge-volume/actions/runs/37604624677)
 
-See [Windows development setup and hardware checks](docs/windows-development.md) for the experimental installer, read-only probe, and test instructions. Windows builds are produced by the **Windows development build** GitHub Actions workflow; they are development artifacts, not a supported public release. Packaged users do not need Rust or Node.js.
+**This is an experimental audio and touchpad diagnostic build. Physical trackpad edge gestures are not enabled yet.** It includes system volume read/write, a volume indicator preview, explicit ±5 percentage point test buttons, and background touchpad report counts.
+
+1. Sign in to GitHub and open the **Windows development ZIP** link above. If needed, open the verified build page and download **EdgeVolume-windows-development-x64** under **Artifacts**.
+2. Right-click the downloaded ZIP and choose **Extract All**.
+3. On a **Windows 10/11 x64 laptop**, open **EdgeVolume_0.1.0_x64-setup.exe** from the extracted folder and follow the installer.
+4. Open **EdgeVolume** from the Start menu. Click **Preview volume indicator** to check the popup without changing volume.
+5. Click **Volume −5%** or **Volume +5%** to test system audio. These buttons change volume by five percentage points, bounded to 0–100%.
+6. Move a finger on the trackpad and note **HID reports received**. Switch to Chrome, move your finger again, then return and check whether the count increased.
+7. Close Preferences to leave the app in the system tray. Use **Quit EdgeVolume** in its tray menu to exit.
+
+**You do not need Rust, Node.js, npm, or C++ developer tools.** If WebView2 is missing, the installer uses Tauri's WebView2 bootstrapper, which may need an internet connection. The installer is unsigned, so Windows may show an unknown-publisher warning; only use a repository build you trust.
+
+The linked development artifact expires on **21 October 2026** and GitHub requires sign-in to download it. After expiry, use a newer successful run in [Windows development builds](https://github.com/reveuse12/edge-volume/actions/workflows/windows-development.yml). These artifacts are for testing and are separate from supported public releases.
+
+See [the Windows read-only probe and tester checklist](docs/windows-development.md) for reporting results. Increasing report counts do not yet prove physical finger coordinates or working edge gestures.
 
 ## Features
 
@@ -107,7 +121,7 @@ A small activation deadzone filters tiny movements. Starting outside the strip, 
 
 ## Volume indicator
 
-The indicator appears near the lower-right corner of the display associated with its window. On macOS it is configured to join desktop Spaces and other apps' fullscreen Spaces, remain visible when EdgeVolume is inactive, and display above ordinary app windows. It stays above ordinary windows, does not take keyboard focus, and ignores clicks. It reads volume back from the audio device after adjustments, so the percentage reflects the reported output level.
+The indicator appears near the lower-right corner of the display associated with its window. On macOS a native nonactivating panel draws the indicator directly, independently of the preferences WebView. It is configured to join desktop Spaces and other apps' fullscreen Spaces, stay visible when EdgeVolume is inactive, and display above ordinary app windows. It follows the display containing the cursor. It stays above ordinary windows, does not take keyboard focus, and ignores clicks. It reads volume back from the audio device after adjustments, so the percentage reflects the reported output level.
 
 Click **Preview volume indicator** in preferences to show your current volume for five seconds without changing it.
 
@@ -197,7 +211,7 @@ On 7 October 2026:
 - The debug macOS app bundled and opened successfully.
 - The hardware probe received real trackpad contacts and read system volume.
 - Desktop preferences displayed live input and output volume.
-- The floating indicator was visually verified using the read-only preview, including after closing preferences and switching to Chrome.
+- The native macOS indicator was visually verified with Preferences closed and Chrome taking focus. Fullscreen and multi-monitor behavior still need wider hardware testing.
 - Windows x64 CI compiled the native adapter and passed the five shared gesture tests and read-only adapter self-check.
 - Windows CI built an NSIS development installer and verified that the app and probe do not import external MSVC runtime DLLs.
 - The Windows development UI was checked with simulated status data; real Windows audio, background reports, and physical contact decoding still need laptop testing.

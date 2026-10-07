@@ -4,7 +4,7 @@ This is an experimental hardware diagnostic and audio test build, not a finished
 
 ## Try the development installer
 
-1. Open the repository's **Actions → Windows development build** and choose a successful run.
+1. Download the [verified Windows development ZIP](https://github.com/reveuse12/edge-volume/actions/runs/37604624677/artifacts/11474931281), available until 21 October 2026. After expiry, open the repository's **Actions → Windows development build** and choose a newer successful run.
 2. Download **EdgeVolume-windows-development-x64** under Artifacts. GitHub requires sign-in to download artifacts.
 3. Extract the ZIP and run the setup executable on a Windows 10/11 x64 laptop. This installer is unsigned; Windows may flag it as an unknown publisher. Only use a build from this repository that you trust.
 4. Open EdgeVolume. The output percentage should match Windows volume. **Preview volume indicator** reads volume without changing it. **Volume −5% / +5%** deliberately change system volume by five percentage points, bounded to 0–100%. The separate Windows mute state is preserved.
