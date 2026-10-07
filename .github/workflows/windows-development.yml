@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.cargo/**'
       - 'src/**'
       - 'public/**'
       - 'src-tauri/**'
@@ -12,6 +13,7 @@ on:
       - '.github/workflows/windows-development.yml'
   pull_request:
     paths:
+      - '.cargo/**'
       - 'src/**'
       - 'public/**'
       - 'src-tauri/**'
@@ -42,11 +44,23 @@ jobs:
         shell: cmd
         run: |
           mkdir windows-artifacts
-          cl /nologo /EHsc /std:c++17 /W4 tools\windows-probe.cpp src-tauri\native\windows.cpp /Fe:windows-artifacts\edgevolume-windows-probe.exe /link ole32.lib user32.lib
+          cl /nologo /EHsc /MT /std:c++17 /W4 tools\windows-probe.cpp src-tauri\native\windows.cpp /Fe:windows-artifacts\edgevolume-windows-probe.exe /link ole32.lib user32.lib
           if errorlevel 1 exit /b 1
           windows-artifacts\edgevolume-windows-probe.exe --self-test
       - name: Build experimental installer
         run: npm run tauri build -- --bundles nsis
+      - name: Verify standalone runtime dependencies
+        shell: pwsh
+        run: |
+          $binaries = @('src-tauri/target/release/edgevolume.exe', 'windows-artifacts/edgevolume-windows-probe.exe')
+          foreach ($binary in $binaries) {
+            $dependencies = (& dumpbin /dependents $binary | Out-String)
+            if ($LASTEXITCODE -ne 0) { throw "Dependency inspection failed: $binary" }
+            Write-Output $dependencies
+            if ($dependencies -match '(?i)(MSVCP|VCRUNTIME|CONCRT)[0-9_]*[^\s]*\.dll') {
+              throw "Unexpected external MSVC runtime dependency: $binary"
+            }
+          }
       - name: Collect development installer
         shell: pwsh
         run: |

@@ -11,7 +11,7 @@ This is an experimental hardware diagnostic and audio test build, not a finished
 5. Move a finger on the trackpad and check **Touchpad collections** and **HID reports received**. Switch to Chrome, move the finger again, then return and compare the report count.
 6. Switch audio outputs and repeat the explicit audio check. Closing preferences leaves the app in the system tray; use its Quit command to exit.
 
-No Rust, Node.js, or C++ tools are needed for these packaged downloads. Tauri requires WebView2; the installer uses Tauri's default WebView2 bootstrapper when needed, which may require an internet connection. A Windows CI runner can build the installer but cannot validate your physical trackpad.
+No Rust, Node.js, or C++ tools are needed for these packaged downloads. Windows x64 builds statically link the MSVC runtime, and CI checks the app and probe for external MSVC runtime DLL dependencies. Tauri requires WebView2; the installer uses Tauri's default WebView2 bootstrapper when needed, which may require an internet connection. A Windows CI runner can build the installer but cannot validate your physical trackpad.
 
 ## Read-only hardware probe
 

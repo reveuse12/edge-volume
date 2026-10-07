@@ -1,0 +1,4 @@
+# Include the MSVC runtime in Windows app/probe builds, rather than requiring
+# users to install the Visual C++ redistributable for our native adapter.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
