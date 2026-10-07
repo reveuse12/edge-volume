@@ -53,3 +53,22 @@ npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis
 Pass the explicit Windows target so static runtime flags apply to the app, rather than host build scripts and procedural macros. The normal Mac release workflow remains separate. Windows development artifacts are not published as a supported GitHub release.
 
 References: [Microsoft Raw Input](https://learn.microsoft.com/en-us/windows/win32/inputdev/about-raw-input), [RegisterRawInputDevices](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerrawinputdevices), [Windows Precision Touchpad collection](https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection), [IAudioEndpointVolume](https://learn.microsoft.com/en-us/windows/win32/api/endpointvolume/nn-endpointvolume-iaudioendpointvolume), [Tauri installers](https://v2.tauri.app/distribute/windows-installer/).
+
+## Tester report
+
+Send back these details after trying the development build:
+
+```text
+Laptop model:
+Windows version/build:
+Touchpad driver/version (if known):
+Touchpad collections:
+Report count before/after moving a finger in EdgeVolume:
+Report count before/after moving a finger while Chrome is active:
+Volume −5% / +5% matched Windows volume: yes/no
+Indicator preview visible over another app: yes/no
+Changed audio output and repeated audio test: result
+Any error message:
+```
+
+A screenshot of the diagnostic section is useful. This report is manual; EdgeVolume does not upload it.

@@ -197,7 +197,10 @@ On 7 October 2026:
 - The debug macOS app bundled and opened successfully.
 - The hardware probe received real trackpad contacts and read system volume.
 - Desktop preferences displayed live input and output volume.
-- The floating indicator was visually verified using the read-only preview.
+- The floating indicator was visually verified using the read-only preview, including after closing preferences and switching to Chrome.
+- Windows x64 CI compiled the native adapter and passed the five shared gesture tests and read-only adapter self-check.
+- Windows CI built an NSIS development installer and verified that the app and probe do not import external MSVC runtime DLLs.
+- The Windows development UI was checked with simulated status data; real Windows audio, background reports, and physical contact decoding still need laptop testing.
 
 These checks establish a working Mac prototype, not cross-platform release readiness.
 
