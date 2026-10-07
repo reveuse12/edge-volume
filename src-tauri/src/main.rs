@@ -16,6 +16,19 @@ use tauri::{
 extern "C" {
     fn edge_start(callback: extern "C" fn(i32, i32, f32, f32)) -> i32;
     fn edge_volume(value: *mut f32, write: i32) -> i32;
+    fn edge_configure_overlay(window: *mut std::ffi::c_void, show: i32);
+}
+#[cfg(target_os = "windows")]
+extern "C" {
+    fn edge_windows_start() -> i32;
+    fn edge_windows_volume(value: *mut f32, write: i32) -> i32;
+    fn edge_windows_diagnostics(devices: *mut i32, reports: *mut u64, state: *mut i32);
+}
+#[derive(Serialize, Clone)]
+struct WindowsDiagnostics {
+    devices: i32,
+    reports: u64,
+    listener: i32,
 }
 #[derive(Serialize, Clone)]
 struct Feedback {
@@ -26,6 +39,8 @@ struct Feedback {
 #[derive(Serialize, Clone)]
 struct Status {
     settings: Settings,
+    platform: String,
+    diagnostics: Option<WindowsDiagnostics>,
     input: String,
     volume: Option<f32>,
     error: Option<String>,
@@ -55,10 +70,23 @@ fn volume(write: Option<f32>) -> Result<f32, String> {
             ))
         }
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    {
+        let mut value = write.unwrap_or(0.0);
+        let code = unsafe { edge_windows_volume(&mut value, i32::from(write.is_some())) };
+        if code >= 0 {
+            Ok(value)
+        } else {
+            Err(format!(
+                "Windows output volume unavailable (HRESULT 0x{:08X}).",
+                code as u32
+            ))
+        }
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
         let _ = write;
-        Err("Windows audio adapter is not implemented in this prototype.".into())
+        Err("This platform is not supported.".into())
     }
 }
 extern "C" fn contact(count: i32, id: i32, x: f32, y: f32) {
@@ -117,6 +145,29 @@ fn get_status() -> Result<Status, String> {
         .lock()
         .map_err(|_| "Engine unavailable")?;
     e.status.volume = volume(None).ok();
+    #[cfg(target_os = "windows")]
+    {
+        let (mut devices, mut reports, mut listener) = (0, 0, 0);
+        unsafe {
+            edge_windows_diagnostics(&mut devices, &mut reports, &mut listener);
+        }
+        e.status.diagnostics = Some(WindowsDiagnostics {
+            devices,
+            reports,
+            listener,
+        });
+        e.status.input = if listener < 0 {
+            format!("Touchpad diagnostic failed (code {listener})")
+        } else if listener == 0 {
+            "Touchpad diagnostic is not listening".into()
+        } else if devices < 0 {
+            "Touchpad device enumeration failed".into()
+        } else if devices == 0 {
+            "No touchpad HID collection exposed".into()
+        } else {
+            "Touchpad diagnostic active; edge gestures pending".into()
+        };
+    }
     Ok(e.status.clone())
 }
 #[tauri::command]
@@ -165,6 +216,38 @@ fn preview_feedback() -> Result<(), String> {
     e.feedback_until = Some(Instant::now() + Duration::from_secs(5));
     Ok(())
 }
+#[tauri::command]
+fn test_windows_volume(delta: f32) -> Result<(), String> {
+    if !cfg!(target_os = "windows") {
+        return Err("Windows audio test only".into());
+    }
+    if delta != 0.05 && delta != -0.05 {
+        return Err("Choose a five percentage point step".into());
+    }
+    let before = volume(None)?;
+    volume(Some((before + delta).clamp(0.0, 1.0)))?;
+    let after = volume(None)?;
+    let mut e = ENGINE
+        .get()
+        .unwrap()
+        .lock()
+        .map_err(|_| "Engine unavailable")?;
+    e.status.volume = Some(after);
+    e.status.feedback = Some(Feedback {
+        volume: after,
+        change: after - before,
+        label: if after > before {
+            "Increasing"
+        } else if after < before {
+            "Decreasing"
+        } else {
+            "Volume unchanged"
+        }
+        .into(),
+    });
+    e.feedback_until = Some(Instant::now() + Duration::from_millis(1400));
+    Ok(())
+}
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -182,6 +265,8 @@ fn main() {
                 .set(Mutex::new(Engine {
                     status: Status {
                         settings,
+                        platform: std::env::consts::OS.into(),
+                        diagnostics: None,
                         input: "Starting".into(),
                         volume: volume(None).ok(),
                         error: None,
@@ -201,8 +286,15 @@ fn main() {
                 0 => "Listening".into(),
                 c => format!("Trackpad unavailable (code {c})"),
             };
-            #[cfg(not(target_os = "macos"))]
-            let input = "Windows Precision Touchpad adapter pending".to_string();
+            #[cfg(target_os = "windows")]
+            let input = {
+                unsafe {
+                    edge_windows_start();
+                }
+                "Touchpad diagnostic active; edge gestures pending".to_string()
+            };
+            #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+            let input = "Unsupported platform".to_string();
             ENGINE.get().unwrap().lock().unwrap().status.input = input;
             let show = MenuItem::with_id(app, "show", "Preferences", true, None::<&str>)?;
             let pause =
@@ -241,6 +333,10 @@ fn main() {
                 .get_webview_window("overlay")
                 .ok_or("Overlay window missing")?;
             overlay.set_ignore_cursor_events(true)?;
+            #[cfg(target_os = "macos")]
+            unsafe {
+                edge_configure_overlay(overlay.ns_window()?, 0);
+            }
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 let mut shown = false;
@@ -270,6 +366,12 @@ fn main() {
                                     let _ = w.set_position(tauri::LogicalPosition::new(x, y));
                                 }
                                 let _ = w.show();
+                                #[cfg(target_os = "macos")]
+                                if let Ok(window) = w.ns_window() {
+                                    unsafe {
+                                        edge_configure_overlay(window, 1);
+                                    }
+                                }
                             } else {
                                 let _ = w.hide();
                             }
@@ -289,7 +391,8 @@ fn main() {
             get_status,
             save_settings,
             preview_feedback,
-            get_feedback
+            get_feedback,
+            test_windows_volume
         ])
         .run(tauri::generate_context!())
         .expect("Could not start EdgeVolume");

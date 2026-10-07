@@ -4,7 +4,7 @@ Control your Mac's system volume by sliding one finger along the **physical edge
 
 EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React, and TypeScript**. A small floating indicator shows the current volume and whether it is increasing or decreasing.
 
-> **Platform status:** The macOS prototype is implemented and has been tested on an Apple Silicon Mac. Windows Precision Touchpad support is planned; this version does not control volume on Windows.
+> **Platform status:** The macOS prototype is implemented and has been tested on an Apple Silicon Mac. Windows development has started: source builds include audio controls and read-only touchpad diagnostics. Windows physical edge gestures are not implemented or hardware-validated yet.
 
 ## See how it works
 
@@ -56,9 +56,9 @@ Want to change the code? The developer setup below is separate from installing t
 
 ### Windows laptop users
 
-**Windows support is not available in this version.** There is no Windows installer, and building the current code on Windows will not enable trackpad volume control.
+**Windows physical edge gestures are not available yet.** The new development build adds system volume read/write, an indicator preview, explicit ±5 percentage point audio test buttons, and background touchpad HID diagnostics. It does not decode finger coordinates or enable gestures.
 
-A future Windows version needs a supported **Precision Touchpad** and a completed Windows input/audio adapter. Once that version is released, this section will include its download and installation steps. For now, only the Mac prototype can be used.
+See [Windows development setup and hardware checks](docs/windows-development.md) for the experimental installer, read-only probe, and test instructions. Windows builds are produced by the **Windows development build** GitHub Actions workflow; they are development artifacts, not a supported public release. Packaged users do not need Rust or Node.js.
 
 ## Features
 
@@ -107,7 +107,7 @@ A small activation deadzone filters tiny movements. Starting outside the strip, 
 
 ## Volume indicator
 
-The indicator appears near the lower-right corner of the display associated with its window. It stays above ordinary windows, does not take keyboard focus, and ignores clicks. It reads volume back from the audio device after adjustments, so the percentage reflects the reported output level.
+The indicator appears near the lower-right corner of the display associated with its window. On macOS it is configured to join desktop Spaces and other apps' fullscreen Spaces, remain visible when EdgeVolume is inactive, and display above ordinary app windows. It stays above ordinary windows, does not take keyboard focus, and ignores clicks. It reads volume back from the audio device after adjustments, so the percentage reflects the reported output level.
 
 Click **Preview volume indicator** in preferences to show your current volume for five seconds without changing it.
 
@@ -170,6 +170,9 @@ Settings are stored in Tauri's application configuration directory as `settings.
 | `src-tauri/src/gesture.rs` | Gesture recognition and tests |
 | `src-tauri/src/main.rs` | Desktop lifecycle, settings, commands, tray, and indicator |
 | `src-tauri/native/mac.c` | macOS physical contact and CoreAudio adapters |
+| `src-tauri/native/windows.cpp` | Windows endpoint audio and background HID diagnostics |
+| `src-tauri/native/overlay.m` | macOS cross-app and fullscreen overlay behavior |
+| `tools/windows-probe.cpp` | Read-only Windows hardware diagnostic |
 | `tools/mac-probe.c` | Read-only hardware diagnostic |
 | `PRD_ Cross-Platform Trackpad Edge Volume Control.md` | Requirements and implementation clarifications |
 
@@ -178,10 +181,10 @@ Settings are stored in Tauri's application configuration directory as `settings.
 - **Private macOS API:** OS updates can break the undocumented input ABI. Mac App Store compatibility is not claimed.
 - **System gestures remain active:** The prototype observes touches; it does not suppress cursor motion or native trackpad gestures during volume adjustment.
 - **One trackpad per session:** The adapter selects a trackpad at startup. Restart after connecting or reconnecting devices.
-- **Windows is pending:** Precision Touchpad HID input and Windows audio endpoint adapters are not implemented.
+- **Windows is pending:** Windows audio and background HID diagnostics are implemented for development. Contact decoding and physical edge gestures remain pending hardware validation.
 - **Release features are pending:** No launch at login, fullscreen/app exclusions, mute shortcut, or updater.
 - **Performance targets remain unverified:** Memory, latency, installer size, older macOS versions, and Intel compatibility still need measurement and hardware testing.
-- **Fullscreen behavior is unverified:** The floating indicator has been checked on the desktop; coverage of fullscreen apps and Spaces remains to be tested.
+- **Fullscreen behavior is unverified:** Cross-app and fullscreen window behavior is configured explicitly on macOS; coverage across fullscreen apps, Spaces, and multiple monitors still needs hands-on testing.
 
 The observation-only input adapter does not currently request Accessibility or Input Monitoring permission. A future input suppression adapter will need its own permission handling and validation.
 

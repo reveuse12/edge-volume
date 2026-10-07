@@ -31,7 +31,8 @@
         "skipTaskbar": true,
         "focus": false,
         "focusable": false,
-        "backgroundColor": "#101714"
+        "backgroundColor": "#101714",
+        "visibleOnAllWorkspaces": true
       }
     ],
     "security": {
