@@ -26,7 +26,9 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Install Rust
-        run: rustup toolchain install stable --profile minimal
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
       - name: Install frontend dependencies
         run: npm ci
       - name: Check gesture engine
@@ -42,7 +44,7 @@ jobs:
           set -euo pipefail
           app='src-tauri/target/release/bundle/macos/EdgeVolume.app'
           codesign --verify --deep --strict --verbose=2 "$app"
-          lipo -verify_arch "$EXPECTED_ARCH" "$app/Contents/MacOS/edgevolume"
+          lipo "$app/Contents/MacOS/edgevolume" -verify_arch "$EXPECTED_ARCH"
           mkdir -p package assets
           ditto "$app" package/EdgeVolume.app
           ln -s /Applications package/Applications
