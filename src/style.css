@@ -4,3 +4,5 @@
 .brand{display:flex;align-items:center;gap:9px}.brand img{width:32px;height:32px}.edge.left{border-left:0;border-right:1px solid #79ce9455}
 
 .windows-diagnostics{border:1px solid #34473d;border-radius:8px;padding:14px;margin-bottom:18px;font-size:11px;color:#9aaba1;line-height:1.6}.windows-diagnostics p{margin:0 0 12px}.audio-tests{display:flex;gap:8px;margin-bottom:12px}.audio-tests button{flex:1;font-size:11px}.windows-diagnostics dl div{display:flex;justify-content:space-between}.windows-diagnostics dd{color:#8bddaa}
+
+.safety{margin-bottom:20px}.safety select{width:100%;padding:10px;background:#19291f;color:#cddbd2;border:1px solid #3a5143;border-radius:8px;margin:10px 0}.safety .preview{margin:6px 0}.exclusions{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.exclusions button{padding:8px;border:1px solid #3a5143;border-radius:8px;color:#cddbd2;background:#19291f}

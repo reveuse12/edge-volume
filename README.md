@@ -12,7 +12,7 @@ EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React,
 
 **1. Enable gestures.** Open EdgeVolume and click **Enable gestures**. Start with the default **Right** edge.
 
-**2. Slide on the trackpad itself.** Place one finger inside the rightmost strip. Slide up to increase volume or down to decrease it. Your cursor can be anywhere on the screen. Lift your finger when you are done. This guide shows the default direction; **Reverse direction** swaps up and down.
+**2. Slide on the trackpad itself.** In the latest development build, hold **Option** and rest one finger inside the rightmost strip for **0.2 seconds**. Then slide up to increase volume or down to decrease it. Your cursor can be anywhere on the screen. Lift your finger when you are done. This guide shows the default direction; **Reverse direction** swaps up and down.
 
 **3. Watch the popup.** It shows the actual volume percentage and whether volume is increasing or decreasing, then disappears after you stop. The guide above is an illustration; the image below is a screenshot of the real Mac app.
 
@@ -115,7 +115,7 @@ This launches the native desktop app and its development frontend. Running `npm 
 3. Place one finger inside the highlighted strip and slide vertically. Up increases volume; down decreases it, unless direction is reversed.
 4. Lift your finger to finish. The volume indicator disappears 1.4 seconds after the last adjustment.
 
-A small activation deadzone filters tiny movements. Starting outside the strip, adding another finger, leaving the strip, or a large coordinate jump cancels the gesture until all fingers lift.
+Hold **Option**, rest one finger inside the selected edge for **0.2 seconds**, then slide vertically. Option is required by default; you can turn it off in preferences. The stationary hold still applies. Starting outside the strip, early movement, sideways movement, multiple fingers, releasing Option, stale frames, changing fingers, or a large coordinate jump cancels the gesture until all fingers lift. Volume changes are limited to 60 percentage points per second.
 
 **Closing preferences keeps EdgeVolume running in the menu bar.** Choose **Quit EdgeVolume** from its menu to exit.
 
@@ -152,7 +152,7 @@ To check native trackpad input and audio access independently of the UI:
 
 ```sh
 clang tools/mac-probe.c src-tauri/native/mac.c \
-  -framework CoreFoundation -framework CoreAudio \
+  -framework CoreFoundation -framework CoreAudio -framework CoreGraphics \
   -o /tmp/edgevolume-probe
 /tmp/edgevolume-probe
 ```
@@ -171,7 +171,7 @@ Physical trackpad contacts
 
 The macOS adapter dynamically loads Apple's private `MultitouchSupport` framework to receive normalized finger coordinates. Ordinary cursor or scroll events cannot identify the physical trackpad edge.
 
-The Rust engine requires a single contact that begins inside an active edge, applies an activation deadzone, rejects invalid gestures, and clamps volume to 0–100%. CoreAudio reads and writes the current default output device. Unsupported audio outputs pause gestures and report an error.
+The Rust engine requires a single contact that begins inside an active edge, applies an activation deadzone, rejects invalid gestures, and clamps volume to 0–100%. CoreAudio reads and writes the current default output device. Unsupported audio outputs temporarily pause gestures; the enabled preference is kept so an adjustable output can resume automatically. Output changes cancel the current touch, and volume writes stay bound to the output where the gesture began.
 
 Settings are stored in Tauri's application configuration directory as `settings.json`. Trackpad contact data is held in memory; the app does not send it over the network or write it to logs.
 
@@ -207,12 +207,12 @@ The observation-only input adapter does not currently request Accessibility or I
 On 7 October 2026:
 
 - Production frontend build and TypeScript checks passed.
-- Five Rust gesture tests passed.
+- Fourteen Rust tests passed for gesture rejection, intentional activation, audio recovery, and the one-instance lock.
 - The debug macOS app bundled and opened successfully.
 - The hardware probe received real trackpad contacts and read system volume.
 - Desktop preferences displayed live input and output volume.
 - The native macOS indicator was visually verified with Preferences closed and Chrome taking focus. Fullscreen and multi-monitor behavior still need wider hardware testing.
-- Windows x64 CI compiled the native adapter and passed the five shared gesture tests and read-only adapter self-check.
+- Windows x64 CI compiled the native adapter and passed the shared gesture tests and read-only adapter self-check.
 - Windows CI built an NSIS development installer and verified that the app and probe do not import external MSVC runtime DLLs.
 - The Windows development UI was checked with simulated status data; real Windows audio, background reports, and physical contact decoding still need laptop testing.
 
@@ -242,3 +242,15 @@ To publish a new version, update the version in `package.json`, `src-tauri/Cargo
 macOS app search can show more than one EdgeVolume entry when it finds multiple `.app` bundles. Developers may have a debug app, a release app, and a packaging test copy in `src-tauri/target/`, alongside the installed copy in `/Applications`.
 
 These are separate files, not evidence that multiple app processes are running. For everyday use, open **Finder → Applications → EdgeVolume**. Build and test copies are not required by the installed app and can be moved to Trash when you no longer need them. Installing from the DMG alone does not create the debug or packaging test copies.
+
+### Accidental-swipe safeguards (latest source/local build)
+
+These changes are in the development source; the original v0.1.0 macOS release DMG predates them.
+
+- Hold **Option**, rest one finger on the edge for **0.2 seconds**, then move vertically. Lift all fingers after a rejected gesture.
+- Use **Pause in these apps** to exclude games, drawing apps, or any open app where gestures are inconvenient. Refresh the list after opening another app.
+- Sleep, session changes, app switches, and audio-output changes cancel an active gesture. Trackpad connections are watched and retried; **Reconnect trackpad** lets you retry manually. Hardware recovery still needs testing on more Macs.
+- A second instance exits automatically. Launches still start paused.
+- The indicator distinguishes actual mute from minimum volume. Unsupported audio outputs pause adjustment and recover when an adjustable output is available.
+
+The app still observes input without suppressing pointer movement or macOS gestures. Avoid the feature in apps where those movements would be disruptive, or exclude them. The private macOS touch API and Windows contact decoding remain limitations.

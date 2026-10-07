@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#import <IOKit/IOKitLib.h>
 
 // A real nonactivating NSPanel is independent of the preferences WebView and
 // its background rendering lifecycle. All calls run on Tauri's main thread.
@@ -72,3 +73,57 @@ void edge_show_overlay(float volume, const char *label, int visible) {
     [hud displayIfNeeded];
     [panel orderFrontRegardless];
 }
+
+// Lifecycle notifications are delivered on the AppKit main queue. Modifier
+// checks read only current Option state; no keyboard event history is captured.
+static NSMutableArray *watchers;
+static IONotificationPortRef device_notifications;
+static io_iterator_t added_devices, removed_devices;
+static void (*system_callback)(int,const char*,const char*);
+static void drain_devices(io_iterator_t iterator) {
+    io_object_t device;
+    while((device=IOIteratorNext(iterator))) IOObjectRelease(device);
+}
+static void device_changed(void *context,io_iterator_t iterator) {
+    (void)context;drain_devices(iterator);
+    if(system_callback) system_callback(3,NULL,NULL);
+}
+void edge_watch_system(void (*callback)(int,const char*,const char*)) {
+    system_callback=callback;
+    device_notifications=IONotificationPortCreate(kIOMainPortDefault);
+    if(device_notifications) {
+        CFRunLoopSourceRef source=IONotificationPortGetRunLoopSource(device_notifications);
+        if(source) CFRunLoopAddSource(CFRunLoopGetMain(),source,kCFRunLoopCommonModes);
+        if(IOServiceAddMatchingNotification(device_notifications,kIOFirstMatchNotification,
+            IOServiceMatching("AppleMultitouchDevice"),device_changed,NULL,&added_devices)==KERN_SUCCESS)
+            drain_devices(added_devices); // Initial enumeration only arms notifications.
+        if(IOServiceAddMatchingNotification(device_notifications,kIOTerminatedNotification,
+            IOServiceMatching("AppleMultitouchDevice"),device_changed,NULL,&removed_devices)==KERN_SUCCESS)
+            drain_devices(removed_devices);
+    }
+    watchers=[[NSMutableArray alloc] init];
+    NSNotificationCenter *center=[[NSWorkspace sharedWorkspace] notificationCenter];
+    for(NSString *notification in @[NSWorkspaceWillSleepNotification,NSWorkspaceSessionDidResignActiveNotification])
+        [watchers addObject:[center addObserverForName:notification object:nil queue:[NSOperationQueue mainQueue]
+            usingBlock:^(NSNotification *note) { (void)note;callback(0,NULL,NULL); }]];
+    for(NSString *notification in @[NSWorkspaceDidWakeNotification,NSWorkspaceSessionDidBecomeActiveNotification])
+        [watchers addObject:[center addObserverForName:notification object:nil queue:[NSOperationQueue mainQueue]
+            usingBlock:^(NSNotification *note) { (void)note;callback(1,NULL,NULL); }]];
+    [watchers addObject:[center addObserverForName:NSWorkspaceDidActivateApplicationNotification
+        object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+            NSRunningApplication *app=note.userInfo[NSWorkspaceApplicationKey];
+            callback(2,app.bundleIdentifier.UTF8String,app.localizedName.UTF8String);
+        }]];
+    NSRunningApplication *app=[NSWorkspace sharedWorkspace].frontmostApplication;
+    callback(2,app.bundleIdentifier.UTF8String,app.localizedName.UTF8String);
+}
+char *edge_running_apps(void) {
+    NSMutableArray *apps=[NSMutableArray array];
+    for(NSRunningApplication *app in [NSWorkspace sharedWorkspace].runningApplications)
+        if(app.activationPolicy==NSApplicationActivationPolicyRegular && app.bundleIdentifier
+            && ![app.bundleIdentifier isEqualToString:@"com.edgevolume.app"])
+            [apps addObject:@{@"id":app.bundleIdentifier,@"name":app.localizedName?:app.bundleIdentifier}];
+    NSData *data=[NSJSONSerialization dataWithJSONObject:apps options:0 error:nil];
+    return strdup([[[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease] UTF8String]);
+}
+void edge_free_string(char *value) { free(value); }

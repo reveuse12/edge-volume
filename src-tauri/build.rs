@@ -5,8 +5,10 @@ fn main() {
             .file("native/overlay.m")
             .compile("edge_overlay");
         println!("cargo:rustc-link-lib=framework=AppKit");
+        println!("cargo:rustc-link-lib=framework=IOKit");
         println!("cargo:rustc-link-lib=framework=CoreFoundation");
         println!("cargo:rustc-link-lib=framework=CoreAudio");
+        println!("cargo:rustc-link-lib=framework=CoreGraphics");
     }
     if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
         cc::Build::new()
