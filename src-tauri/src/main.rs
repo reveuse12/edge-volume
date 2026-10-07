@@ -74,6 +74,7 @@ struct Status {
     y: f32,
     contacts: i32,
     frames: u64,
+    gesture_hint: String,
     feedback: Option<Feedback>,
 }
 struct Engine {
@@ -115,7 +116,11 @@ impl Engine {
         None
     }
     fn cancel(&mut self) {
-        self.gesture.cancel();
+        if self.status.contacts == 0 {
+            self.gesture.reset();
+        } else {
+            self.gesture.cancel();
+        }
         self.feedback_until = None;
         self.status.feedback = None;
     }
@@ -369,6 +374,7 @@ fn get_status() -> Result<Status, String> {
             "Touchpad diagnostic active; edge gestures pending".into()
         };
     }
+    e.status.gesture_hint = e.gesture.hint().into();
     Ok(e.status.clone())
 }
 #[tauri::command]
@@ -483,6 +489,7 @@ fn main() {
                         y: 0.0,
                         contacts: 0,
                         frames: 0,
+                        gesture_hint: "Start one finger inside the selected edge".into(),
                         feedback: None,
                     },
                     gesture: Gesture::default(),

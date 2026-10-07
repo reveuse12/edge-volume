@@ -12,7 +12,7 @@ EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React,
 
 **1. Enable gestures.** Open EdgeVolume and click **Enable gestures**. Start with the default **Right** edge.
 
-**2. Slide on the trackpad itself.** In the latest development build, hold **Option** and rest one finger inside the rightmost strip for **0.2 seconds**. Then slide up to increase volume or down to decrease it. Your cursor can be anywhere on the screen. Lift your finger when you are done. This guide shows the default direction; **Reverse direction** swaps up and down.
+**2. Slide on the trackpad itself.** Place one finger inside the rightmost strip and slide up to increase volume or down to decrease it. Your cursor can be anywhere on the screen. Lift your finger when you are done. This guide shows the default direction; **Reverse direction** swaps up and down.
 
 **3. Watch the popup.** It shows the actual volume percentage and whether volume is increasing or decreasing, then disappears after you stop. The guide above is an illustration; the image below is a screenshot of the real Mac app.
 
@@ -115,7 +115,7 @@ This launches the native desktop app and its development frontend. Running `npm 
 3. Place one finger inside the highlighted strip and slide vertically. Up increases volume; down decreases it, unless direction is reversed.
 4. Lift your finger to finish. The volume indicator disappears 1.4 seconds after the last adjustment.
 
-Hold **Option**, rest one finger inside the selected edge for **0.2 seconds**, then slide vertically. Option is required by default; you can turn it off in preferences. The stationary hold still applies. Starting outside the strip, early movement, sideways movement, multiple fingers, releasing Option, stale frames, changing fingers, or a large coordinate jump cancels the gesture until all fingers lift. Volume changes are limited to 60 percentage points per second.
+A normal edge swipe needs no keyboard key or stationary hold. **Require Option key** is an optional extra safeguard. Starting outside the strip, sideways movement, multiple fingers, releasing Option when required, interrupted active input, changing fingers, or a large coordinate jump cancels the gesture until all fingers lift. Volume changes are limited to 60 percentage points per second. Preferences show why a touch was rejected.
 
 **Closing preferences keeps EdgeVolume running in the menu bar.** Choose **Quit EdgeVolume** from its menu to exit.
 
@@ -207,7 +207,7 @@ The observation-only input adapter does not currently request Accessibility or I
 On 7 October 2026:
 
 - Production frontend build and TypeScript checks passed.
-- Fourteen Rust tests passed for gesture rejection, intentional activation, audio recovery, and the one-instance lock.
+- Sixteen Rust tests passed for gesture rejection, intentional activation, audio recovery, and the one-instance lock.
 - The debug macOS app bundled and opened successfully.
 - The hardware probe received real trackpad contacts and read system volume.
 - Desktop preferences displayed live input and output volume.
@@ -247,9 +247,8 @@ These are separate files, not evidence that multiple app processes are running. 
 
 These changes are in the development source; the original v0.1.0 macOS release DMG predates them.
 
-![Current Mac settings with Option required, instructions for a stationary hold, app exclusions, and a reconnect control](docs/images/safeguards.jpg)
 
-- Hold **Option**, rest one finger on the edge for **0.2 seconds**, then move vertically. Lift all fingers after a rejected gesture.
+- Start one finger on the selected edge and slide vertically. No hold or keyboard key is required by default. Enable **Require Option key** if you prefer extra protection. Lift all fingers after a rejected gesture.
 - Use **Pause in these apps** to exclude games, drawing apps, or any open app where gestures are inconvenient. Refresh the list after opening another app.
 - Sleep, session changes, app switches, and audio-output changes cancel an active gesture. Trackpad connections are watched and retried; **Reconnect trackpad** lets you retry manually. Hardware recovery still needs testing on more Macs.
 - A second instance exits automatically. Launches still start paused.

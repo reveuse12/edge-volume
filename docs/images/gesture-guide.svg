@@ -18,7 +18,7 @@
 <path d="M649 244V344" stroke="#8bddaa" stroke-width="2.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
 <ellipse cx="649" cy="294" rx="8" ry="12" fill="#d2f8df"/>
 <text x="680" y="254" font-size="15" fill="#8bddaa">UP</text><text x="680" y="275" font-size="13" fill="#b4c6ba">Louder</text><text x="680" y="329" font-size="15" fill="#8bddaa">DOWN</text><text x="680" y="350" font-size="13" fill="#b4c6ba">Quieter</text>
-<text x="435" y="389" font-size="16" fill="#b4c6ba">Hold Option. Rest on the edge for 0.2s.</text><text x="435" y="417" font-size="14" fill="#87a294">Slide vertically. Lift all fingers to finish.</text></g>
+<text x="435" y="389" font-size="16" fill="#b4c6ba">Start on the physical trackpad edge.</text><text x="435" y="417" font-size="14" fill="#87a294">Slide vertically. Lift all fingers to finish.</text></g>
 <g><circle cx="850" cy="162" r="16" fill="#344b3d"/><text x="846" y="168" font-size="16">3</text><text x="878" y="168" font-size="20">Watch the volume</text>
 <rect x="835" y="223" width="325" height="142" rx="14" fill="#17221c" stroke="#34473d"/>
 <text x="858" y="260" font-size="11" letter-spacing="2" fill="#87a294">EDGEVOLUME</text><text x="858" y="292" font-size="18">↑ Increasing</text><text x="1135" y="293" font-size="38" text-anchor="end" fill="#d2f8df">45%</text>

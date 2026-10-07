@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 fn default_modifier() -> bool {
-    true
+    false
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -24,7 +24,7 @@ impl Default for Settings {
             width: 0.08,
             sensitivity: 1.0,
             inverted: false,
-            require_modifier: true,
+            require_modifier: false,
             excluded_apps: Vec::new(),
         }
     }
@@ -60,20 +60,32 @@ pub struct Gesture {
     origin_x: f32,
     origin_y: f32,
     previous_y: f32,
-    started: Duration,
     last: Option<Duration>,
     left: bool,
-    armed: bool,
     active: bool,
     rejected: bool,
+    rejection: Option<&'static str>,
 }
 impl Gesture {
     pub fn reset(&mut self) {
         *self = Self::default();
     }
     pub fn cancel(&mut self) {
+        self.reject("Lift all fingers before starting again");
+    }
+    fn reject(&mut self, reason: &'static str) {
         self.rejected = true;
         self.active = false;
+        self.rejection = Some(reason);
+    }
+    pub fn hint(&self) -> &'static str {
+        self.rejection.unwrap_or(if self.active {
+            "Adjusting volume"
+        } else if self.contact.is_some() {
+            "Slide vertically to adjust volume"
+        } else {
+            "Start one finger inside the selected edge"
+        })
     }
     pub fn feed(&mut self, s: &Settings, t: Touch) -> Option<f32> {
         if t.count == 0 {
@@ -83,8 +95,9 @@ impl Gesture {
         let elapsed = self.last.map(|last| t.at.checked_sub(last));
         self.last = Some(t.at);
         // Missing/reordered frames (including sleep) cannot resume an old swipe.
-        if elapsed.is_some_and(|d| d.is_none_or(|d| d > Duration::from_millis(250))) {
-            self.cancel();
+        if elapsed.is_some_and(|d| d.is_none_or(|d| self.active && d > Duration::from_millis(250)))
+        {
+            self.reject("Input interrupted; lift all fingers and retry");
             return None;
         }
         if !s.enabled
@@ -93,7 +106,15 @@ impl Gesture {
             || !(0.0..=1.0).contains(&t.x)
             || !(0.0..=1.0).contains(&t.y)
         {
-            self.cancel();
+            self.reject(if !s.enabled {
+                "Gestures are paused"
+            } else if t.count != 1 {
+                "Use one finger; lift all fingers and retry"
+            } else if s.require_modifier && !t.modifier {
+                "Hold Option before starting the swipe"
+            } else {
+                "Invalid touch sample; lift all fingers and retry"
+            });
             return None;
         }
         // Rejection is latched even if no single contact has been assigned yet.
@@ -104,7 +125,7 @@ impl Gesture {
             let left = s.edge != "right" && t.x <= s.width;
             let right = s.edge != "left" && t.x >= 1.0 - s.width;
             if !left && !right {
-                self.cancel();
+                self.reject("Start inside the selected edge; lift all fingers and retry");
                 return None;
             }
             self.contact = Some(t.id);
@@ -112,7 +133,6 @@ impl Gesture {
             self.origin_x = t.x;
             self.origin_y = t.y;
             self.previous_y = t.y;
-            self.started = t.at;
             return None;
         }
         let inside = if self.left {
@@ -123,30 +143,17 @@ impl Gesture {
         let dx = t.x - self.origin_x;
         let dy = t.y - self.origin_y;
         let step = t.y - self.previous_y;
-        if self.contact != Some(t.id) || !inside || dx.abs() > 0.025 || step.abs() > 0.15 {
-            self.cancel();
+        if self.contact != Some(t.id) || !inside || dx.abs() > 0.06 || step.abs() > 0.15 {
+            self.reject("Touch left the edge or changed; lift all fingers and retry");
             return None;
         }
         self.previous_y = t.y;
-        // A stationary 200ms dwell prevents ordinary edge crossings from arming.
-        if !self.armed {
-            if dx.abs() > 0.012 || dy.abs() > 0.012 {
-                self.cancel();
-                return None;
-            }
-            if t.at - self.started >= Duration::from_millis(200) {
-                self.armed = true;
-                self.origin_x = t.x;
-                self.origin_y = t.y;
-            }
-            return None;
-        }
         if !self.active {
             if dy.abs() < 0.03 {
                 return None;
             }
-            if dx.abs() > dy.abs() * 0.4 {
-                self.cancel();
+            if dx.abs() > dy.abs() * 0.6 {
+                self.reject("Swipe vertically; lift all fingers and retry");
                 return None;
             }
             self.active = true;
@@ -193,7 +200,7 @@ mod tests {
         assert_eq!(frame(g, s, 1, 1, x, 0.3, 200, true), None);
     }
     #[test]
-    fn intentional_hold_then_vertical_motion() {
+    fn intentional_vertical_motion() {
         let s = settings();
         let mut g = Gesture::default();
         arm(&mut g, &s, 0.98);
@@ -202,7 +209,10 @@ mod tests {
     }
     #[test]
     fn ordinary_swipe_without_option_never_arms() {
-        let s = settings();
+        let s = Settings {
+            require_modifier: true,
+            ..settings()
+        };
         let mut g = Gesture::default();
         for i in 0..15 {
             assert_eq!(
@@ -214,15 +224,29 @@ mod tests {
         assert_eq!(frame(&mut g, &s, 1, 1, 0.98, 0.6, 240, true), None);
     }
     #[test]
-    fn quick_edge_swipe_rejected_even_without_modifier_requirement() {
-        let s = Settings {
-            require_modifier: false,
-            ..settings()
-        };
+    fn normal_edge_swipe_works_without_option_or_a_hold() {
+        let s = settings();
+        let mut g = Gesture::default();
+        assert!(!s.require_modifier);
+        frame(&mut g, &s, 1, 1, 0.98, 0.3, 0, false);
+        assert!(frame(&mut g, &s, 1, 1, 0.97, 0.35, 16, false).unwrap() > 0.0);
+    }
+    #[test]
+    fn stationary_contact_without_repeated_frames_can_start_moving() {
+        let s = settings();
         let mut g = Gesture::default();
         frame(&mut g, &s, 1, 1, 0.98, 0.3, 0, false);
-        assert_eq!(frame(&mut g, &s, 1, 1, 0.98, 0.35, 16, false), None);
-        assert_eq!(frame(&mut g, &s, 1, 1, 0.98, 0.4, 200, false), None);
+        assert!(frame(&mut g, &s, 1, 1, 0.98, 0.35, 1000, false).unwrap() > 0.0);
+        // A gap during an active adjustment still cancels rather than catching up.
+        assert_eq!(frame(&mut g, &s, 1, 1, 0.98, 0.4, 2000, false), None);
+    }
+    #[test]
+    fn horizontal_swipe_rejects_even_inside_the_strip() {
+        let s = settings();
+        let mut g = Gesture::default();
+        frame(&mut g, &s, 1, 1, 0.98, 0.3, 0, false);
+        assert_eq!(frame(&mut g, &s, 1, 1, 0.94, 0.33, 16, false), None);
+        assert_eq!(frame(&mut g, &s, 1, 1, 0.94, 0.4, 32, false), None);
     }
     #[test]
     fn left_right_and_both_share_safety_rules() {
@@ -262,7 +286,10 @@ mod tests {
     #[test]
     fn added_finger_release_or_changed_identity_cancels() {
         for (n, id, key) in [(2, 1, true), (1, 1, false), (1, 2, true)] {
-            let s = settings();
+            let s = Settings {
+                require_modifier: true,
+                ..settings()
+            };
             let mut g = Gesture::default();
             arm(&mut g, &s, 0.98);
             assert_eq!(frame(&mut g, &s, n, id, 0.98, 0.35, 216, key), None);
@@ -271,7 +298,7 @@ mod tests {
     }
     #[test]
     fn cannot_switch_edges_or_move_sideways() {
-        for x in [0.5, 0.02, 0.94] {
+        for x in [0.5, 0.02, 0.9] {
             let s = Settings {
                 edge: "both".into(),
                 ..settings()
@@ -283,10 +310,11 @@ mod tests {
     }
     #[test]
     fn stale_or_reordered_frames_cancel() {
-        for ms in [501, 199] {
+        for ms in [501, 215] {
             let s = settings();
             let mut g = Gesture::default();
             arm(&mut g, &s, 0.98);
+            frame(&mut g, &s, 1, 1, 0.98, 0.34, 216, true);
             assert_eq!(frame(&mut g, &s, 1, 1, 0.98, 0.35, ms, true), None);
         }
     }
@@ -318,7 +346,7 @@ mod tests {
             r#"{"enabled":true,"edge":"right","width":0.08,"sensitivity":1,"inverted":false}"#,
         )
         .unwrap();
-        assert!(s.require_modifier && s.excluded_apps.is_empty());
+        assert!(!s.require_modifier && s.excluded_apps.is_empty());
         let mut g = Gesture::default();
         g.cancel();
         assert_eq!(frame(&mut g, &s, 1, 1, 0.98, 0.3, 0, true), None);
