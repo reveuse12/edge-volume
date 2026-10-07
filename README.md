@@ -6,6 +6,22 @@ EdgeVolume is an experimental desktop utility built with **Tauri 2, Rust, React,
 
 > **Platform status:** The macOS prototype is implemented and has been tested on an Apple Silicon Mac. Windows Precision Touchpad support is planned; this version does not control volume on Windows.
 
+## See how it works
+
+![Three-step EdgeVolume guide: enable gestures, slide one finger along the physical right edge of the trackpad, and watch the volume popup](docs/images/gesture-guide.svg)
+
+**1. Enable gestures.** Open EdgeVolume and click **Enable gestures**. Start with the default **Right** edge.
+
+**2. Slide on the trackpad itself.** Place one finger inside the rightmost strip. Slide up to increase volume or down to decrease it. Your cursor can be anywhere on the screen. Lift your finger when you are done. This guide shows the default direction; **Reverse direction** swaps up and down.
+
+**3. Watch the popup.** It shows the actual volume percentage and whether volume is increasing or decreasing, then disappears after you stop. The guide above is an illustration; the image below is a screenshot of the real Mac app.
+
+### Choose your edge and sensitivity
+
+![EdgeVolume Mac preferences showing the Enable gestures button, a highlighted right trackpad edge, edge selection, width, sensitivity, and reverse direction controls](docs/images/preferences.jpg)
+
+The green strip marks the active part of the **physical trackpad**. Choose **Left**, **Right**, or **Both**, adjust **Edge width** if the strip feels too narrow, and adjust **Sensitivity** to change how quickly volume moves. The screenshot shows gestures paused; click **Enable gestures** to start.
+
 ## For laptop users: the easiest way to use it
 
 ### MacBook users — no developer tools needed

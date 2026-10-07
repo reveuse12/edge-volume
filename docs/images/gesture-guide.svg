@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+<title id="title">How to use EdgeVolume</title>
+<desc id="desc">Enable gestures, place one finger on the right physical edge of the trackpad and slide vertically, then read the volume popup. Up increases and down decreases volume with the default direction.</desc>
+<defs><linearGradient id="pad" x2="1" y2="1"><stop stop-color="#26372c"/><stop offset="1" stop-color="#17261e"/></linearGradient><marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8" fill="none" stroke="#8bddaa" stroke-width="1.6"/></marker></defs>
+<rect width="1200" height="500" rx="24" fill="#101714"/>
+<g font-family="Arial,Helvetica,sans-serif" fill="#e8eee9">
+<text x="40" y="49" font-size="13" letter-spacing="3" fill="#9aaba1">EDGEVOLUME · QUICK START</text>
+<text x="40" y="95" font-size="30">One finger. One edge. Your volume.</text>
+<path d="M405 145V440M805 145V440" stroke="#2b3931"/>
+<g><circle cx="56" cy="162" r="16" fill="#344b3d"/><text x="52" y="168" font-size="16">1</text><text x="84" y="168" font-size="20">Enable gestures</text>
+<rect x="40" y="215" width="325" height="126" rx="16" fill="#1a261f" stroke="#34473d"/>
+<text x="64" y="245" font-size="12" fill="#9aaba1">IN EDGEVOLUME PREFERENCES</text>
+<rect x="64" y="266" width="277" height="48" rx="9" fill="#344b3d" stroke="#8bddaa"/><text x="84" y="296" font-size="17" fill="#b0edc6">Enabled</text><circle cx="317" cy="290" r="6" fill="#8bddaa"/>
+<text x="40" y="389" font-size="16" fill="#b4c6ba">Choose Right to get started.</text><text x="40" y="417" font-size="14" fill="#87a294">Enable again after each app launch.</text></g>
+<g><circle cx="450" cy="162" r="16" fill="#344b3d"/><text x="446" y="168" font-size="16">2</text><text x="478" y="168" font-size="20">Slide along the edge</text>
+<rect x="435" y="223" width="225" height="142" rx="16" fill="url(#pad)" stroke="#526057" stroke-width="2"/>
+<path d="M638 225H644Q658 225 658 239V349Q658 363 644 363H638Z" fill="#8bddaa" fill-opacity=".3"/><path d="M638 225V363" stroke="#8bddaa" stroke-opacity=".6"/>
+<path d="M649 244V344" stroke="#8bddaa" stroke-width="2.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+<ellipse cx="649" cy="294" rx="8" ry="12" fill="#d2f8df"/>
+<text x="680" y="254" font-size="15" fill="#8bddaa">UP</text><text x="680" y="275" font-size="13" fill="#b4c6ba">Louder</text><text x="680" y="329" font-size="15" fill="#8bddaa">DOWN</text><text x="680" y="350" font-size="13" fill="#b4c6ba">Quieter</text>
+<text x="435" y="389" font-size="16" fill="#b4c6ba">Start on the physical trackpad edge.</text><text x="435" y="417" font-size="14" fill="#87a294">Use one finger. Lift it to finish.</text></g>
+<g><circle cx="850" cy="162" r="16" fill="#344b3d"/><text x="846" y="168" font-size="16">3</text><text x="878" y="168" font-size="20">Watch the volume</text>
+<rect x="835" y="223" width="325" height="142" rx="14" fill="#17221c" stroke="#34473d"/>
+<text x="858" y="260" font-size="11" letter-spacing="2" fill="#87a294">EDGEVOLUME</text><text x="858" y="292" font-size="18">↑ Increasing</text><text x="1135" y="293" font-size="38" text-anchor="end" fill="#d2f8df">45%</text>
+<rect x="858" y="322" width="279" height="5" rx="2.5" fill="#2a3930"/><rect x="858" y="322" width="126" height="5" rx="2.5" fill="#8bddaa"/>
+<text x="835" y="389" font-size="16" fill="#b4c6ba">The popup shows the current level.</text><text x="835" y="417" font-size="14" fill="#87a294">It disappears when you stop sliding.</text></g>
+<text x="40" y="472" font-size="12" fill="#758b7d">Illustrated guide · Default direction · Cursor position on the screen does not matter.</text>
+</g></svg>
