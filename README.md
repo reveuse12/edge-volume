@@ -247,6 +247,8 @@ These are separate files, not evidence that multiple app processes are running. 
 
 These changes are in the development source; the original v0.1.0 macOS release DMG predates them.
 
+![Current Mac settings with Option required, instructions for a stationary hold, app exclusions, and a reconnect control](docs/images/safeguards.jpg)
+
 - Hold **Option**, rest one finger on the edge for **0.2 seconds**, then move vertically. Lift all fingers after a rejected gesture.
 - Use **Pause in these apps** to exclude games, drawing apps, or any open app where gestures are inconvenient. Refresh the list after opening another app.
 - Sleep, session changes, app switches, and audio-output changes cancel an active gesture. Trackpad connections are watched and retried; **Reconnect trackpad** lets you retry manually. Hardware recovery still needs testing on more Macs.
