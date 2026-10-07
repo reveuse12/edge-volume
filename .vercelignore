@@ -1,4 +1,10 @@
-*
-!landing/
-!landing/**
+.git/
+.vercel/
+node_modules/
+src-tauri/
+src/
+public/
+docs/
+dist/
 landing/.vercel/
+.env*
