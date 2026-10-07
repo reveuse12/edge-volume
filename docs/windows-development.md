@@ -45,11 +45,11 @@ On Windows, install Node.js, Rust (MSVC toolchain), Microsoft C++ Build Tools wi
 
 ```powershell
 npm ci
-cargo test --locked --manifest-path src-tauri/Cargo.toml
-npm run tauri dev
-npm run tauri build -- --bundles nsis
+cargo test --locked --target x86_64-pc-windows-msvc --manifest-path src-tauri/Cargo.toml
+npm run tauri dev -- --target x86_64-pc-windows-msvc
+npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis
 ```
 
-The normal Mac release workflow remains separate. Windows development artifacts are not published as a supported GitHub release.
+Pass the explicit Windows target so static runtime flags apply to the app, rather than host build scripts and procedural macros. The normal Mac release workflow remains separate. Windows development artifacts are not published as a supported GitHub release.
 
 References: [Microsoft Raw Input](https://learn.microsoft.com/en-us/windows/win32/inputdev/about-raw-input), [RegisterRawInputDevices](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerrawinputdevices), [Windows Precision Touchpad collection](https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection), [IAudioEndpointVolume](https://learn.microsoft.com/en-us/windows/win32/api/endpointvolume/nn-endpointvolume-iaudioendpointvolume), [Tauri installers](https://v2.tauri.app/distribute/windows-installer/).
